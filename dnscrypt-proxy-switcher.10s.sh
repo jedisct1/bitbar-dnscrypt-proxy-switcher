@@ -2,12 +2,13 @@
 #
 # dnscrypt-proxy switcher
 #
-# <bitbar.title>dnscrypt-proxy switcher</bitbar.title>
-# <bitbar.version>v0.1</bitbar.version>
-# <bitbar.author>Frank Denis</bitbar.author>
 # <bitbar.author.github>jedisct1</bitbar.author.github>
+# <bitbar.author>Frank Denis</bitbar.author>
 # <bitbar.desc>Toggle dnscrypt-proxy usage</bitbar.desc>
+# <bitbar.image>https://raw.githubusercontent.com/jedisct1/bitbar-dnscrypt-proxy-switcher/master/bitbar-dnscrypt-proxy.jpg</bitbar.image>
+# <bitbar.title>dnscrypt-proxy switcher</bitbar.title>
 # <bitbar.url>https://github.com/jedisct1/bitbar-dnscrypt-proxy-switcher</bitbar.url>
+# <bitbar.version>v0.1</bitbar.version>
 
 DNSCRYPT_PROXY_IPS="127.0.0.1"
 ADDITIONAL_IPS="9.9.9.9"
