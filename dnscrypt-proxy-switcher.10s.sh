@@ -20,7 +20,7 @@ ERROR_ICON="JVBERi0xLjMKJcTl8uXrp/Og0MTGCjQgMCBvYmoKPDwgL0xlbmd0aCA1IDAgUiAvRmls
 
 osversion=$(sw_vers -productVersion)
 osmajor=$(echo "$osversion" | awk -F. '{print $2}')
-[ $osmajor -lt 7 ] && exit 0
+[ $osmajor -lt 7 ] && exit 1
 
 get_current_service() {
 	services=$(networksetup -listnetworkserviceorder | fgrep 'Hardware Port')
@@ -83,33 +83,7 @@ get_current_resolvers() {
 	echo "$ips"
 }
 
-display_name_for_resolvers() {
-	resolvers="$1"
-	if [ "$resolvers" = "$DNSCRYPT_PROXY_IPS" ]; then
-		echo "dnscrypt-proxy"
-	elif [ "$resolvers" = "${DNSCRYPT_PROXY_IPS} ${ADDITIONAL_IPS}" ]; then
-		echo "dnscrypt-proxy + ${ADDITIONAL_NAME}"
-	elif [ "$resolvers" = "" ]; then
-		echo "none"
-	else
-		echo "$resolvers"
-	fi
-}
-
-service=$(get_current_service)
-if [ -z "$service" ]; then
-	echo "| templateImage=$ERROR_ICON dropdown=false"
-	exit 0
-fi
-
-service_resolvers=$(get_service_resolvers "$service")
-current_resolvers=$(get_current_resolvers)
-service_resolvers_name=$(display_name_for_resolvers "$service_resolvers")
-current_resolvers_name=$(display_name_for_resolvers "$current_resolvers")
-
-if [ "$#" -gt 0 ]; then
-	wanted_resolvers="$*"
-	networksetup -setdnsservers "$service" $wanted_resolvers
+flush_dns_cache() {
 	if [ $osmajor -le 8 ]; then
 		killall -HUP mDNSResponder 2>/dev/null
 	elif [ $osmajor = 9 ]; then
@@ -139,6 +113,36 @@ if [ "$#" -gt 0 ]; then
 	else
 		killall -HUP mDNSResponder 2>/dev/null
 	fi
+}
+
+display_name_for_resolvers() {
+	resolvers="$1"
+	if [ "$resolvers" = "$DNSCRYPT_PROXY_IPS" ]; then
+		echo "dnscrypt-proxy"
+	elif [ "$resolvers" = "${DNSCRYPT_PROXY_IPS} ${ADDITIONAL_IPS}" ]; then
+		echo "dnscrypt-proxy + ${ADDITIONAL_NAME}"
+	elif [ "$resolvers" = "" ]; then
+		echo "none"
+	else
+		echo "$resolvers"
+	fi
+}
+
+service=$(get_current_service)
+if [ -z "$service" ]; then
+	echo "| templateImage=$ERROR_ICON dropdown=false"
+	exit 0
+fi
+
+service_resolvers=$(get_service_resolvers "$service")
+current_resolvers=$(get_current_resolvers)
+service_resolvers_name=$(display_name_for_resolvers "$service_resolvers")
+current_resolvers_name=$(display_name_for_resolvers "$current_resolvers")
+
+if [ "$#" -gt 0 ]; then
+	wanted_resolvers="$*"
+	networksetup -setdnsservers "$service" $wanted_resolvers
+	flush_dns_cache
 fi
 
 if [ "$current_resolvers_name" = "dnscrypt-proxy" ]; then
