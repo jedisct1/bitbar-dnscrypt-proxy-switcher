@@ -134,16 +134,17 @@ if [ -z "$service" ]; then
 	exit 0
 fi
 
+if [ "$#" -gt 0 ]; then
+	wanted_resolvers="$*"
+	networksetup -setdnsservers "$service" $wanted_resolvers
+	flush_dns_cache 2>/dev/null
+	exit 0
+fi
+
 service_resolvers=$(get_service_resolvers "$service")
 current_resolvers=$(get_current_resolvers)
 service_resolvers_name=$(display_name_for_resolvers "$service_resolvers")
 current_resolvers_name=$(display_name_for_resolvers "$current_resolvers")
-
-if [ "$#" -gt 0 ]; then
-	wanted_resolvers="$*"
-	networksetup -setdnsservers "$service" $wanted_resolvers
-	flush_dns_cache
-fi
 
 if [ "$current_resolvers_name" = "dnscrypt-proxy" ]; then
 	echo "| templateImage=$CONNECTED_ICON dropdown=false"
