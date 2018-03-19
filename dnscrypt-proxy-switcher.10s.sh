@@ -144,15 +144,12 @@ flush_dns_cache() {
 
 display_name_for_resolvers() {
 	resolvers="$1"
-	if [ "$resolvers" = "$DNSCRYPT_PROXY_IPS" ]; then
-		echo "dnscrypt-proxy"
-	elif [ "$resolvers" = "${DNSCRYPT_PROXY_IPS} ${ADDITIONAL_IPS}" ]; then
-		echo "dnscrypt-proxy + ${ADDITIONAL_NAME}"
-	elif [ "$resolvers" = "" ]; then
-		echo "none"
-	else
-		echo "$resolvers"
-	fi
+	case "$resolvers" in
+	"$DNSCRYPT_PROXY_IPS") echo "dnscrypt-proxy" ;;
+	"${DNSCRYPT_PROXY_IPS} ${ADDITIONAL_IPS}") echo "dnscrypt-proxy + ${ADDITIONAL_NAME}" ;;
+	^$ | There*) echo "default" ;;
+	*) echo "$resolvers" ;;
+	esac
 }
 
 service=$(get_current_service)
