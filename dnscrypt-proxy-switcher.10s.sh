@@ -10,7 +10,7 @@
 # <bitbar.url>https://github.com/jedisct1/bitbar-dnscrypt-proxy-switcher</bitbar.url>
 # <bitbar.version>v0.1</bitbar.version>
 
-# Theme: classis or emoji
+# Theme: classic or emoji
 THEME="classic"
 
 # Non-authenticated resolver IP addresses
@@ -40,24 +40,23 @@ classic)
 	PROXY_ICON='🔒'
 	PROXY_ADDITIONAL_ICON='🔓'
 	OTHER_ICON='🤷'
-	ADDITIONAL_ICON="$OTHER_ICON"
+	ADDITIONAL_ICON='☘'
 	ERROR_ICON='🧟'
 	;;
 esac
 
 osversion=$(sw_vers -productVersion)
 osmajor=$(echo "$osversion" | awk -F. '{print $2}')
-[ $osmajor -lt 7 ] && exit 1
+[ "$osmajor" -lt 7 ] && exit 1
 
 get_current_service() {
-	services=$(networksetup -listnetworkserviceorder | fgrep 'Hardware Port')
-	echo "$services" | while read line; do
-		sname=$(echo $line | awk -F "(, )|(: )|[)]" '{print $2}')
-		sdev=$(echo $line | awk -F "(, )|(: )|[)]" '{print $4}')
+	services=$(networksetup -listnetworkserviceorder | grep -F 'Hardware Port')
+	echo "$services" | while read -r line; do
+		sname=$(echo "$line" | awk -F "(, )|(: )|[)]" '{print $2}')
+		sdev=$(echo "$line" | awk -F "(, )|(: )|[)]" '{print $4}')
 		if [ -n "$sdev" ]; then
-			ifout="$(ifconfig $sdev 2>/dev/null)"
-			echo "$ifout" | grep 'status: active' >/dev/null 2>&1
-			if [ "$?" -eq 0 ]; then
+			ifout="$(ifconfig "$sdev" 2>/dev/null)"
+			if echo "$ifout" | grep -Fq 'status: active'; then
 				currentservice="$sname"
 				break
 			fi
@@ -65,7 +64,7 @@ get_current_service() {
 	done
 
 	if [ -n "$currentservice" ]; then
-		echo $currentservice
+		echo "$currentservice"
 	else
 		exit 1
 	fi
@@ -86,7 +85,7 @@ get_service_resolvers() {
 get_current_resolvers() {
 	[ -r /etc/resolv.conf ] || exit 0
 	ips_i=""
-	sort -u /etc/resolv.conf | while read line; do
+	sort -u /etc/resolv.conf | while read -r line; do
 		case "$line" in
 		nameserver\ *)
 			ip=$(echo "$line" | sed -e 's/nameserver *//' -e 's/ *//')
@@ -98,6 +97,7 @@ get_current_resolvers() {
 	typeset -A found
 	ips=""
 	for ip_i in $ips_i; do
+		# shellcheck disable=SC2086
 		if [ ! ${found["$ip_i"]} ]; then
 			if [ "$ips" ]; then
 				ips="$ips "
@@ -111,26 +111,26 @@ get_current_resolvers() {
 }
 
 flush_dns_cache() {
-	if [ $osmajor -le 8 ]; then
+	if [ "$osmajor" -le 8 ]; then
 		killall -HUP mDNSResponder 2>/dev/null
-	elif [ $osmajor = 9 ]; then
+	elif [ "$osmajor" = 9 ]; then
 		dscacheutil -flushcache 2>/dev/null
 		killall -HUP mDNSResponder 2>/dev/null
-	elif [ $osmajor = 10 ]; then
+	elif [ "$osmajor" = 10 ]; then
 		osminor=$(echo "$osversion" | awk -F. '{print $3}')
-		if [ $osminor -le 3 ]; then
+		if [ "$osminor" -le 3 ]; then
 			discoveryutil mdnsflushcache 2>/dev/null
 			discoveryutil udnsflushcaches 2>/dev/null
 		else
 			dscacheutil -flushcache 2>/dev/null
 			killall -HUP mDNSResponder 2>/dev/null
 		fi
-	elif [ $osmajor = 11 ]; then
+	elif [ "$osmajor" = 11 ]; then
 		dscacheutil -flushcache 2>/dev/null
 		killall -HUP mDNSResponder 2>/dev/null
-	elif [ $osmajor = 12 ]; then
+	elif [ "$osmajor" = 12 ]; then
 		osminor=$(echo "$osversion" | awk -F. '{print $3}')
-		if [ $osminor -le 2 ]; then
+		if [ "$osminor" -le 2 ]; then
 			killall -HUP mDNSResponder 2>/dev/null
 		else
 			killall -HUP mDNSResponder 2>/dev/null
@@ -147,6 +147,7 @@ display_name_for_resolvers() {
 	case "$resolvers" in
 	"$DNSCRYPT_PROXY_IPS") echo "dnscrypt-proxy" ;;
 	"${DNSCRYPT_PROXY_IPS} ${ADDITIONAL_IPS}") echo "dnscrypt-proxy + ${ADDITIONAL_NAME}" ;;
+	"$ADDITIONAL_IPS") echo "$ADDITIONAL_NAME" ;;
 	^$ | There*) echo "default" ;;
 	*) echo "$resolvers" ;;
 	esac
@@ -160,6 +161,7 @@ fi
 
 if [ "$#" -gt 0 ]; then
 	wanted_resolvers="$*"
+	# shellcheck disable=2086
 	networksetup -setdnsservers "$service" $wanted_resolvers
 	flush_dns_cache 2>/dev/null
 	exit 0
@@ -174,6 +176,8 @@ if [ "$current_resolvers_name" = "dnscrypt-proxy" ]; then
 	echo "$PROXY_ICON"
 elif [ "$current_resolvers_name" = "dnscrypt-proxy + ${ADDITIONAL_NAME}" ]; then
 	echo "$PROXY_ADDITIONAL_ICON"
+elif [ "$current_resolvers_name" = "${ADDITIONAL_NAME}" ]; then
+	echo "$ADDITIONAL_ICON"
 else
 	echo "$OTHER_ICON"
 fi
@@ -187,4 +191,5 @@ fi
 echo "Use default DNS | terminal=false refresh=true bash=\"${0}\" param1=empty"
 echo "Use dnscrypt-proxy | terminal=false refresh=true bash=\"${0}\" param1='${DNSCRYPT_PROXY_IPS}'"
 echo "Use dnscrypt-proxy + ${ADDITIONAL_NAME} | terminal=false refresh=true bash=\"${0}\" param1='${DNSCRYPT_PROXY_IPS} ${ADDITIONAL_IPS}'"
+echo "Use ${ADDITIONAL_NAME} | terminal=false refresh=true bash=\"${0}\" param1='${ADDITIONAL_IPS}'"
 echo "View the dnscrypt-proxy public servers list | href=https://dnscrypt.info/public-servers"
