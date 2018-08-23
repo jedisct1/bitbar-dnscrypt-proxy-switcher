@@ -14,10 +14,10 @@
 THEME="classic"
 
 # Non-authenticated resolver IP addresses
-ADDITIONAL_IPS="9.9.9.9"
+ADDITIONAL_IPS="212.30.220.133"
 
 # Name of the non-authenticated resolver
-ADDITIONAL_NAME="quad9"
+ADDITIONAL_NAME="postur.tinna.is"
 
 # IP address of the proxy
 DNSCRYPT_PROXY_IPS="127.0.0.1"
@@ -50,17 +50,18 @@ osmajor=$(echo "$osversion" | awk -F. '{print $2}')
 [ "$osmajor" -lt 7 ] && exit 1
 
 get_current_service() {
-	services=$(networksetup -listnetworkserviceorder | grep -F 'Hardware Port')
+	services=$(networksetup -listnetworkserviceorder | grep 'Hardware Port')
 	echo "$services" | while read -r line; do
 		sname=$(echo "$line" | awk -F "(, )|(: )|[)]" '{print $2}')
 		sdev=$(echo "$line" | awk -F "(, )|(: )|[)]" '{print $4}')
 		if [ -n "$sdev" ]; then
 			ifout="$(ifconfig "$sdev" 2>/dev/null)"
-			if echo "$ifout" | grep -Fq 'status: active'; then
-				currentservice="$sname"
-				break
-			fi
-		fi
+        	echo "$ifout" | grep 'status: active' > /dev/null 2>&1
+	        rc="$?"
+    	    if [ "$rc" -eq 0 ]; then
+        	    currentservice="$sname"
+        	fi
+    	fi
 	done
 
 	if [ -n "$currentservice" ]; then
@@ -183,13 +184,19 @@ else
 fi
 echo "---"
 
-echo "${service} resolvers: ${service_resolvers_name}"
-if [ "$service_resolvers_name" != "$current_resolvers_name" ]; then
-	echo "Current resolvers: ${current_resolvers_name} | color=red"
+if [ "$service_resolvers_name" != "dnscrypt-proxy" ]; then
+	echo "${service} resolver: ${service_resolvers_name}  | color=red"
+else
+	echo "${service} resolver: ${service_resolvers_name}  | color=green"
 fi
-
-echo "Use default DNS | terminal=false refresh=true bash=\"${0}\" param1=empty"
+if [ "$service_resolvers_name" != "$current_resolvers_name" ]; then
+	echo "Current resolver: ${current_resolvers_name} | color=red"
+fi
+echo " | "
 echo "Use dnscrypt-proxy | terminal=false refresh=true bash=\"${0}\" param1='${DNSCRYPT_PROXY_IPS}'"
-echo "Use dnscrypt-proxy + ${ADDITIONAL_NAME} | terminal=false refresh=true bash=\"${0}\" param1='${DNSCRYPT_PROXY_IPS} ${ADDITIONAL_IPS}'"
+echo "Use default system DNS | terminal=false refresh=true bash=\"${0}\" param1=empty"
 echo "Use ${ADDITIONAL_NAME} | terminal=false refresh=true bash=\"${0}\" param1='${ADDITIONAL_IPS}'"
+echo " | "
+echo "DNS nameserver spoofability test | href=https://www.grc.com/dns/dns.htm"
+echo "View the public DNS servers list | href=https://public-dns.info"
 echo "View the dnscrypt-proxy public servers list | href=https://dnscrypt.info/public-servers"
