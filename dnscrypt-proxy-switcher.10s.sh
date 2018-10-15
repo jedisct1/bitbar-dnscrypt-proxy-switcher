@@ -183,6 +183,11 @@ else
 fi
 echo "---"
 
+if [ "$service" = "Wi-Fi" ]; then
+	ssid=$(/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport -I | awk '/ SSID/ {print substr($0, index($0, $2))}')
+	echo "Wi-Fi SSID: ${ssid}"
+fi
+
 echo "${service} resolvers: ${service_resolvers_name}"
 if [ "$service_resolvers_name" != "$current_resolvers_name" ]; then
 	echo "Current resolvers: ${current_resolvers_name} | color=red"
