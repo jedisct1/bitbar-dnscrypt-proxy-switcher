@@ -139,6 +139,7 @@ flush_dns_cache() {
 		fi
 	else
 		killall -HUP mDNSResponder 2>/dev/null
+		dscacheutil -flushcache 2>/dev/null
 	fi
 }
 
