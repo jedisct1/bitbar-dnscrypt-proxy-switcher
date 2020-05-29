@@ -162,8 +162,7 @@ fi
 
 if [ "$#" -gt 0 ]; then
 	wanted_resolvers="$*"
-	# shellcheck disable=2086
-	networksetup -setdnsservers "$service" $wanted_resolvers
+	osascript -e "do shell script \"networksetup -setdnsservers $service $wanted_resolvers\" with administrator privileges"
 	flush_dns_cache 2>/dev/null
 	exit 0
 fi
