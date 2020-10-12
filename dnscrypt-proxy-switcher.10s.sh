@@ -46,8 +46,11 @@ classic)
 esac
 
 osversion=$(sw_vers -productVersion)
-osmajor=$(echo "$osversion" | awk -F. '{print $2}')
-[ "$osmajor" -lt 7 ] && exit 1
+osmajor=$(echo "$osversion" | awk -F. '{print $1}')
+osminor=$(echo "$osversion" | awk -F. '{print $2}')
+ospatch=$(echo "$osversion" | awk -F. '{print $3}')
+[ "$osmajor" -lt 10 ] && exit 1
+[ "$osmajor" == 10 ] && [ "$osminor" -lt 7 ] && exit 1
 
 get_current_service() {
 	services=$(networksetup -listnetworkserviceorder | grep -F 'Hardware Port')
@@ -111,35 +114,37 @@ get_current_resolvers() {
 }
 
 flush_dns_cache() {
-	if [ "$osmajor" -le 8 ]; then
-		killall -HUP mDNSResponder 2>/dev/null
-	elif [ "$osmajor" = 9 ]; then
+	if ["$osmajor" -ge 11 ]; then
 		dscacheutil -flushcache 2>/dev/null
-		killall -HUP mDNSResponder 2>/dev/null
-	elif [ "$osmajor" = 10 ]; then
-		osminor=$(echo "$osversion" | awk -F. '{print $3}')
-		if [ "$osminor" -le 3 ]; then
-			discoveryutil mdnsflushcache 2>/dev/null
-			discoveryutil udnsflushcaches 2>/dev/null
-		else
-			dscacheutil -flushcache 2>/dev/null
-			killall -HUP mDNSResponder 2>/dev/null
-		fi
-	elif [ "$osmajor" = 11 ]; then
-		dscacheutil -flushcache 2>/dev/null
-		killall -HUP mDNSResponder 2>/dev/null
-	elif [ "$osmajor" = 12 ]; then
-		osminor=$(echo "$osversion" | awk -F. '{print $3}')
-		if [ "$osminor" -le 2 ]; then
-			killall -HUP mDNSResponder 2>/dev/null
-		else
-			killall -HUP mDNSResponder 2>/dev/null
-			killall mDNSResponderHelper 2>/dev/null
-			dscacheutil -flushcache 2>/dev/null
-		fi
 	else
-		killall -HUP mDNSResponder 2>/dev/null
-		dscacheutil -flushcache 2>/dev/null
+		if [ "$osminor" -le 8 ]; then
+			killall -HUP mDNSResponder 2>/dev/null
+		elif [ "$osminor" = 9 ]; then
+			dscacheutil -flushcache 2>/dev/null
+			killall -HUP mDNSResponder 2>/dev/null
+		elif [ "$osminor" = 10 ]; then
+			if [ "$ospatch" -le 3 ]; then
+				discoveryutil mdnsflushcache 2>/dev/null
+				discoveryutil udnsflushcaches 2>/dev/null
+			else
+				dscacheutil -flushcache 2>/dev/null
+				killall -HUP mDNSResponder 2>/dev/null
+			fi
+		elif [ "$osminor" = 11 ]; then
+			dscacheutil -flushcache 2>/dev/null
+			killall -HUP mDNSResponder 2>/dev/null
+		elif [ "$osminor" = 12 ]; then
+			if [ "$ospatch" -le 2 ]; then
+				killall -HUP mDNSResponder 2>/dev/null
+			else
+				killall -HUP mDNSResponder 2>/dev/null
+				killall mDNSResponderHelper 2>/dev/null
+				dscacheutil -flushcache 2>/dev/null
+			fi
+		else
+			killall -HUP mDNSResponder 2>/dev/null
+			dscacheutil -flushcache 2>/dev/null
+		fi
 	fi
 }
 
