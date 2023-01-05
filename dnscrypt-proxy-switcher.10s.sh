@@ -69,7 +69,7 @@ get_current_service() {
                 fi
 			fi
 		fi
-	done <<<"$(echo "${services}")"
+	done <<<"${services}"
 
 	if [ -n "$currentservice" ]; then
 		echo "$currentservice"
