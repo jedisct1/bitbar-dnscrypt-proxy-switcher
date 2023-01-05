@@ -60,8 +60,8 @@ get_current_service() {
 		if [ -n "$sdev" ]; then
 			ifout="$(ifconfig "$sdev" 2>/dev/null)"
 			if echo "$ifout" | grep -Fq 'status: active'; then
-                if [ "${sname}" == 'USB 10/100/1000 LAN' ]; then
-                        currentservice="$sname ($sdev)"
+                if [ "$sname" == 'USB 10/100/1000 LAN' ]; then
+                        currentservice="${sname} ($sdev)"
                         break
                 else
                         currentservice="$sname"
@@ -69,7 +69,7 @@ get_current_service() {
                 fi
 			fi
 		fi
-	done <<<$(echo "$services")
+	done <<<"$(echo "${services}")"
 
 	if [ -n "$currentservice" ]; then
 		echo "$currentservice"
