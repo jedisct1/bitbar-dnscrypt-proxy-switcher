@@ -54,17 +54,22 @@ ospatch=$(echo "$osversion" | awk -F. '{print $3}')
 
 get_current_service() {
 	services=$(networksetup -listnetworkserviceorder | grep -F 'Hardware Port')
-	echo "$services" | while read -r line; do
+	while read -r line; do
 		sname=$(echo "$line" | awk -F "(, )|(: )|[)]" '{print $2}')
 		sdev=$(echo "$line" | awk -F "(, )|(: )|[)]" '{print $4}')
 		if [ -n "$sdev" ]; then
 			ifout="$(ifconfig "$sdev" 2>/dev/null)"
 			if echo "$ifout" | grep -Fq 'status: active'; then
-				currentservice="$sname"
-				break
+				if [ "$sname" == 'USB 10/100/1000 LAN' ]; then
+					currentservice="${sname} ($sdev)"
+					break
+				else
+					currentservice="$sname"
+					break
+				fi
 			fi
 		fi
-	done
+	done <<<"${services}"
 
 	if [ -n "$currentservice" ]; then
 		echo "$currentservice"
@@ -114,7 +119,7 @@ get_current_resolvers() {
 }
 
 flush_dns_cache() {
-	if ["$osmajor" -ge 11 ]; then
+	if [ "$osmajor" -ge 11 ]; then
 		dscacheutil -flushcache 2>/dev/null
 	else
 		if [ "$osminor" -le 8 ]; then
