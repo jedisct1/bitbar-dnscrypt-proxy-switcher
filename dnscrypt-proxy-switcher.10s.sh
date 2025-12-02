@@ -53,9 +53,11 @@ ospatch=$(echo "$osversion" | awk -F. '{print $3}')
 [ "$osmajor" == 10 ] && [ "$osminor" -lt 7 ] && exit 1
 
 get_current_service() {
+	typeset i=1
 	services=$(networksetup -listnetworkserviceorder | grep -F 'Hardware Port')
+	servicenames=$(networksetup -listnetworkserviceorder | egrep '^\([0-9]+\) ')
 	while read -r line; do
-		sname=$(echo "$line" | awk -F "(, )|(: )|[)]" '{print $2}')
+		sname=$(echo "$servicenames" | egrep "^\($i\)" | sed -E -e 's/^\([0-9]+\) //')
 		sdev=$(echo "$line" | awk -F "(, )|(: )|[)]" '{print $4}')
 		if [ -n "$sdev" ]; then
 			ifout="$(ifconfig "$sdev" 2>/dev/null)"
@@ -69,6 +71,7 @@ get_current_service() {
 				fi
 			fi
 		fi
+		i=$((i+1))
 	done <<<"${services}"
 
 	if [ -n "$currentservice" ]; then
